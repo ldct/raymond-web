@@ -24,5 +24,8 @@ exports.identifyImage = function (gcsUrl, cb) {
         }]
       }]
     }
-  }, cb);
+  }, function (err, res) {
+    if (err) return cb(err);
+    return cb(null, res.body.responses[0].textAnnotations);
+  });
 }
