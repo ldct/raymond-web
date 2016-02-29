@@ -2,8 +2,6 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
-var imageName = 'receipt.JPG';
-
 var gcsFullUrl = function (filename) {
   return "http://storage.googleapis.com/raymond-images/" + filename;
 };
@@ -13,6 +11,18 @@ var ImageWithBB = React.createClass({
 
   render: function () {
     var self = this;
+
+    var lines = [];
+    var ratio = 500 / self.props.originalWidth;
+
+    self.props.regions.forEach(function (region) {
+      region.lines.forEach(function (line) {
+        lines.push(line);
+      });
+    });
+
+    console.log(lines);
+
     return React.createElement(
       'div',
       null,
@@ -22,23 +32,43 @@ var ImageWithBB = React.createClass({
             position: 'relative',
             top: '10px'
           } },
-        self.props.annotations.map(function (annotation) {
-          var vertices = annotation.boundingPoly.vertices;
-          var topLeft = vertices[0];
-          var bottomRight = vertices[2];
-          var ratio = 500 / self.props.originalWidth;
+        self.props.regions.map(function (region) {
+          var bb = region.boundingBox.split(',');
+
+          var topLeftX = parseInt(bb[0], 10);
+          var topLeftY = parseInt(bb[1], 10);
+          var width = parseInt(bb[2], 10);
+          var height = parseInt(bb[3], 10);
 
           return React.createElement('pre', {
             style: {
               position: 'absolute',
               zIndex: 2,
               margin: 0,
-              left: ratio * topLeft.x,
-              top: ratio * topLeft.y,
-              height: ratio * (bottomRight.y - topLeft.y),
-              width: ratio * (bottomRight.x - topLeft.x),
-              backgroundColor: 'rgba(0, 100, 20, 0.5)',
-              color: 'rgba(0, 100, 20, 0.7)'
+              left: ratio * topLeftX,
+              top: ratio * topLeftY,
+              height: ratio * height,
+              width: ratio * width,
+              backgroundColor: 'rgba(0, 100, 20, 0.5)'
+            } });
+        }),
+        lines.map(function (line) {
+          var bb = line.boundingBox.split(',');
+
+          var topLeftX = parseInt(bb[0], 10);
+          var topLeftY = parseInt(bb[1], 10);
+          var width = parseInt(bb[2], 10);
+          var height = parseInt(bb[3], 10);
+          return React.createElement('pre', {
+            style: {
+              position: 'absolute',
+              zIndex: 3,
+              margin: 0,
+              left: ratio * topLeftX,
+              top: ratio * topLeftY,
+              height: ratio * height,
+              width: ratio * width,
+              backgroundColor: 'rgba(0, 100, 20, 0.5)'
             } });
         }),
         React.createElement('img', {
@@ -57,13 +87,7 @@ var ImageWithBB = React.createClass({
         { style: {
             marginLeft: 500
           } },
-        self.props.annotations.map(function (annotation) {
-          return React.createElement(
-            'pre',
-            null,
-            annotation.description
-          );
-        })
+        'hi'
       )
     );
   }
@@ -74,14 +98,14 @@ var App = React.createClass({
 
   getInitialState: function () {
     return {
-      annotations: []
+      regions: []
     };
   },
   handleClickRunOcr: function () {
     var self = this;
-    $.get('/ocr/receipt', function (res, err) {
+    $.get('/ocr/manga', function (res, err) {
       self.setState({
-        annotations: res
+        regions: res
       });
     });
   },
@@ -95,9 +119,9 @@ var App = React.createClass({
         'Run OCR'
       ),
       React.createElement(ImageWithBB, {
-        filename: 'receipt.JPG',
-        annotations: this.state.annotations,
-        originalWidth: 1691
+        filename: 'manga.jpg',
+        regions: this.state.regions,
+        originalWidth: 800
       })
     );
   }

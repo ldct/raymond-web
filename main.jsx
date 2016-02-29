@@ -1,8 +1,6 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
-var imageName = 'receipt.JPG';
-
 var gcsFullUrl = function (filename) {
   return "http://storage.googleapis.com/raymond-images/" + filename;
 };
@@ -10,29 +8,63 @@ var gcsFullUrl = function (filename) {
 var ImageWithBB = React.createClass({
   render: function () {
     var self = this;
+
+    var lines = [];
+    var ratio = 500 / self.props.originalWidth
+
+    self.props.regions.forEach(function (region) {
+      region.lines.forEach(function (line) {
+        lines.push(line);
+      });
+    });
+
+    console.log(lines);
+
     return <div>
       <div style={{
         position: 'relative',
         top: '10px'
       }}>
-        {self.props.annotations.map(function (annotation) {
-          var vertices = annotation.boundingPoly.vertices;
-          var topLeft = vertices[0];
-          var bottomRight = vertices[2];
-          var ratio = 500 / self.props.originalWidth
+        {self.props.regions.map(function (region) {
+          var bb = region.boundingBox.split(',');
+
+          var topLeftX = parseInt(bb[0], 10);
+          var topLeftY = parseInt(bb[1], 10);
+          var width = parseInt(bb[2], 10);
+          var height = parseInt(bb[3], 10);
 
           return <pre
             style={{
               position: 'absolute',
               zIndex: 2,
               margin: 0,
-              left: ratio * topLeft.x,
-              top: ratio * topLeft.y,
-              height: ratio * (bottomRight.y - topLeft.y),
-              width: ratio * (bottomRight.x - topLeft.x),
+              left: ratio * topLeftX,
+              top: ratio * topLeftY,
+              height: ratio * height,
+              width: ratio * width,
               backgroundColor: 'rgba(0, 100, 20, 0.5)',
-              color: 'rgba(0, 100, 20, 0.7)'
-            }}></pre>
+            }}>
+            </pre>
+        })}
+        {lines.map(function (line) {
+          var bb = line.boundingBox.split(',');
+
+          var topLeftX = parseInt(bb[0], 10);
+          var topLeftY = parseInt(bb[1], 10);
+          var width = parseInt(bb[2], 10);
+          var height = parseInt(bb[3], 10);
+          return <pre
+            style={{
+              position: 'absolute',
+              zIndex: 3,
+              margin: 0,
+              left: ratio * topLeftX,
+              top: ratio * topLeftY,
+              height: ratio * height,
+              width: ratio * width,
+              backgroundColor: 'rgba(0, 100, 20, 0.5)'
+            }}>
+            </pre>  
         })}
         <img
           src={gcsFullUrl(this.props.filename)}
@@ -48,9 +80,7 @@ var ImageWithBB = React.createClass({
       <div style={{
         marginLeft: 500
       }}>
-        {self.props.annotations.map(function (annotation) {
-          return <pre>{annotation.description}</pre>
-        })}
+        hi
       </div>
     </div>
   }
@@ -59,14 +89,14 @@ var ImageWithBB = React.createClass({
 var App = React.createClass({
   getInitialState: function () {
     return {
-      annotations: []
+      regions: []
     };
   },
   handleClickRunOcr: function () {
     var self = this;
-    $.get('/ocr/receipt', function (res, err) {
+    $.get('/ocr/manga', function (res, err) {
       self.setState({
-        annotations: res
+        regions: res
       });
     });
   },
@@ -74,9 +104,9 @@ var App = React.createClass({
     return <div>
       <button onClick={this.handleClickRunOcr}>Run OCR</button>
       <ImageWithBB 
-        filename='receipt.JPG'
-        annotations={this.state.annotations}
-        originalWidth={1691}
+        filename='manga.jpg'
+        regions={this.state.regions}
+        originalWidth={800}
       ></ImageWithBB>
     </div>
   }

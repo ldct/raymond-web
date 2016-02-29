@@ -1,8 +1,7 @@
-var fs = require('fs');
+const request = require('request');
+const fs = require('fs');
 
 const CLOUD_VISION_API_SECRET = fs.readFileSync('CLOUD_VISION_API_SECRET', 'utf8').split('\n')[0]
-
-var request = require('request');
 
 exports.identifyImage = function (gcsUrl, cb) {
   request({
